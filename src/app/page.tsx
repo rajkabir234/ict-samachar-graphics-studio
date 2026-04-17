@@ -174,6 +174,9 @@ export default function Page() {
   const [subheadlineSize, setSubheadlineSize] = useState(24);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const [textAlign, setTextAlign] = useState<"left" | "center" | "right">("left");
+  const [lineHeight, setLineHeight] = useState(1.08);
+
   const currentSize = exportSizes[exportMode];
   const previewMaxWidth = exportMode === "reels" ? 420 : 520;
   const previewScale = previewMaxWidth / currentSize.width;
@@ -273,7 +276,7 @@ export default function Page() {
   const createExportCanvas = async (): Promise<HTMLCanvasElement | null> => {
     const W = currentSize.width;
     const H = currentSize.height;
-
+    await document.fonts.ready;
     const canvas = document.createElement("canvas");
     canvas.width = W;
     canvas.height = H;
@@ -387,9 +390,9 @@ export default function Page() {
       return result;
     };
 
-    const headlineFont   = `800 ${headlineSize}px sans-serif`;
-    const subFont        = `400 ${subheadlineSize}px sans-serif`;
-    const footerFont     = `500 24px sans-serif`;
+    const headlineFont   = `800 ${headlineSize}px "Noto Serif Devanagari", sans-serif`;
+    const subFont        = `400 ${subheadlineSize}px "Noto Serif Devanagari", sans-serif`;
+    const footerFont     = `500 24px "Noto Serif Devanagari", sans-serif`;
     const headlineLineH  = headlineSize * 1.08;
     const subLineH       = subheadlineSize * 1.6;
     const footerLineH    = 24 * 1.4;
@@ -455,37 +458,56 @@ export default function Page() {
     const tagPadX = 28;
     const badgeGap = 16;
 
-    // Category
-    ctx.font = `600 34px sans-serif`;
-    const catM = ctx.measureText(category);
-    const catPillW = Math.max(220, catM.width + catPadX * 2);
-    const catPillX = 24;
+    let nextX = pad;
 
-    pill(ctx, catPillX, badgeY, catPillW, badgeH);
-    ctx.fillStyle = accent;
-    ctx.fill();
+    // ===== CATEGORY =====
+if (category && category.trim() !== "") {
+  ctx.font = `600 34px "Noto Serif Devanagari", sans-serif`;
 
-    ctx.fillStyle = lightTone;
-    drawCentredText(ctx, category, catPillX + catPillW / 2, badgeY + badgeH / 2);
+  const catM = ctx.measureText(category);
+  const catPillW = Math.max(220, catM.width + catPadX * 2);
 
-    // Tag
-    if (tag) {
-      ctx.font = `500 30px sans-serif`;
-      const tagM = ctx.measureText(tag);
-      const tagPillW = Math.max(150, tagM.width + tagPadX * 2);
-      const tagPillX = catPillX + catPillW + badgeGap;
+  pill(ctx, nextX, badgeY, catPillW, badgeH);
 
-      pill(ctx, tagPillX, badgeY, tagPillW, badgeH);
-      ctx.fillStyle = "rgba(255,255,255,0.10)";
-      ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,0.20)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
+  ctx.fillStyle = accent;
+  ctx.fill();
 
-      ctx.fillStyle = lightTone;
-      drawCentredText(ctx, tag, tagPillX + tagPillW / 2, badgeY + badgeH / 2);
-    }
+  ctx.fillStyle = lightTone;
+  drawCentredText(
+    ctx,
+    category,
+    nextX + catPillW / 2,
+    badgeY + badgeH / 2
+  );
 
+  // move next position
+  nextX += catPillW + badgeGap;
+}
+
+// ===== TAG =====
+if (tag) {
+  ctx.font = `500 30px "Noto Serif Devanagari", sans-serif`;
+
+  const tagM = ctx.measureText(tag);
+  const tagPillW = Math.max(150, tagM.width + tagPadX * 2);
+
+  pill(ctx, nextX, badgeY, tagPillW, badgeH);
+
+  ctx.fillStyle = "rgba(255,255,255,0.10)";
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(255,255,255,0.20)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = lightTone;
+  drawCentredText(
+    ctx,
+    tag,
+    nextX + tagPillW / 2,
+    badgeY + badgeH / 2
+  );
+}
     return canvas;
   };
 
@@ -695,6 +717,44 @@ export default function Page() {
                 <label className="mb-1 block text-xs text-[#475569]">
                   Headline font size: {headlineSize}px
                 </label>
+
+                {/* Text Alignment */}
+              <div>
+              <label className="mb-2 block text-sm font-medium text-[#0f172a]">
+               Text Alignment
+              </label>
+              <select
+               className="w-full rounded-xl border px-3 py-2 text-[#0f172a]"
+              value={textAlign}
+               onChange={(e) =>
+              setTextAlign(e.target.value as "left" | "center" | "right")
+              }
+            >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+            </select>
+            </div>
+
+{/* Line Spacing */}
+<div>
+  <label className="mb-1 block text-xs text-[#475569]">
+    Line spacing: {lineHeight.toFixed(2)}
+  </label>
+  <input
+    type="range"
+    min="1"
+    max="2"
+    step="0.05"
+    value={lineHeight}
+    onChange={(e) => setLineHeight(Number(e.target.value))}
+    className="w-full"
+  />
+</div>
+            <div className="space-y-1">
+              <label className="mb-1 block text-xs text-[#475569]">
+                Headline font size: {headlineSize}px
+                </label>
                 <input
                   type="range"
                   min="28"
@@ -703,6 +763,7 @@ export default function Page() {
                   onChange={(e) => setHeadlineSize(Number(e.target.value))}
                   className="w-full"
                 />
+              </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs text-[#475569]">
@@ -946,33 +1007,36 @@ export default function Page() {
                   ──────────────────────────────────────────────────────────────────── */}
                   <div data-badge-row className="absolute left-6 top-6 z-10 flex items-center gap-4">
                     {/* Category pill — outer sets shape/bg, inner centres text */}
-                    <div
-                      style={{
-                        display: "table",
-                        backgroundColor: accent,
-                        borderRadius: "999px",
-                        height: `${BADGE_HEIGHT}px`,
-                        minWidth: "220px",
-                        padding: "0 34px",
-                        boxSizing: "border-box",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "table-cell",
-                          verticalAlign: "middle",
-                          textAlign: "center",
-                          color: lightTone,
-                          fontSize: "34px",
-                          fontWeight: 600,
-                          lineHeight: 1,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {category}
-                      </span>
-                    </div>
+{category && (
+  <div
+    style={{
+      display: "table",
+      backgroundColor: accent,
+      borderRadius: "999px",
+      height: `${BADGE_HEIGHT}px`,
+      minWidth: "220px",
+      padding: "0 34px",
+      boxSizing: "border-box",
+      whiteSpace: "nowrap",
+    }}
+  >
+    <span
+      style={{
+        display: "table-cell",
+        verticalAlign: "middle",
+        textAlign: "center",
+        color: lightTone,
+        fontSize: "34px",
+        fontWeight: 600,
+        lineHeight: 1,
+        whiteSpace: "nowrap",
+        fontFamily: "var(--font-devanagari)",
+      }}
+    >
+      {category}
+    </span>
+  </div>
+)}
 
                     {tag && (
                       /* Tag pill */
@@ -1033,29 +1097,44 @@ export default function Page() {
                       style={{ borderTop: "1px solid rgba(255,255,255,0.10)" }}
                     >
                       <h2
-                        className="font-extrabold leading-[1.08]"
+                        className="font-extrabold"
                         style={{
                           color: lightTone,
                           fontSize: `${headlineSize}px`,
-                        }}
-                      >
+                          lineHeight: lineHeight * 0.95,   // tighter for headline
+                          textAlign: textAlign,
+                          fontFamily: "var(--font-devanagari)",
+                          letterSpacing: "-0.5px",         // news-style tightness
+                          maxWidth: "90%",                 // prevents too wide text
+                            }}
+                          >
                         {headline}
                       </h2>
                       <p
-                        className="mt-3 leading-relaxed"
-                        style={{
-                          color: `${lightTone}E6`,
-                          fontSize: `${subheadlineSize}px`,
-                        }}
+                      className="mt-3"
+                      style={{
+                      color: `${lightTone}E6`,
+                      fontSize: `${subheadlineSize}px`,
+                      lineHeight: lineHeight*1.25,                 // spacing control
+                      textAlign: textAlign,                   // alignment control
+                      fontFamily: "var(--font-devanagari)", 
+                      maxWidth: "85%"  // Nepali font
+                       }}
                       >
                         {subheadline}
                       </p>
-                      <div
+                      {footerText && (
+                        <div
                         className="mt-4 text-sm font-medium"
-                        style={{ color: `${lightTone}CC` }}
-                      >
-                        {footerText}
-                      </div>
+                        style={{
+                        color: `${lightTone}CC`,
+                        textAlign: textAlign,
+                        fontFamily: "var(--font-devanagari)",
+                         }}
+                        >
+                       {footerText}
+                        </div>
+                        )}
                     </div>
                   </div>
                 </div>
